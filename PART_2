@@ -1,0 +1,38 @@
+class Perceptron(object):
+    def __init__(self, eta=0.01, iteration=10): #eta는 학습율, iteration은 반복횟수
+        self.lr = eta #lr은 (learning rate)학습율이고 위에 eta와 같다. 수업에서 배운 알파와 같다.
+        self.iteration = iteration
+        self.w = 0.0
+        self.bias = 0.0 # 기본 식은 wx + bias 이고, 기본값 0.0으로 설정
+        
+    def fit(self, X, Y):
+        for _ in range(self.iteration): #반복 횟수
+            for i in range(len(X)): #x의 원소 개수만큼 학습
+                x = X[i]
+                y = Y[i]
+                update = self.lr * (y - self.predict(x)) #밑의 식에 따라 수정계수 설정
+                self.w += update * x
+                self.bias += update #변수 수정
+        
+    def net_input(self, x):
+        return self.w * x + self.bias #기본 식 반환
+    
+    def predict(self, x):
+        return 1.0 if self.net_input(x) > 0.0 else 0.0 #0보다 크면 1, 그렇지 않으면 0을 반환
+    
+#training
+
+x = [1, 2, 3, 10, 20, -2, -10, -100, -5, -20]
+y = [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+model = Perceptron(0.01, 10) #eta와 iteration을 넣는다.
+model.fit(x, y) #class속에 있는 definition된 함수 fit을 사용하는 것이다. training의 주요 함수이다.
+
+#testing
+
+test_x = [30, 40, -20, -60]
+for i in range(len(test_x)):
+    print('input {} => predict : {}'.format(test_x[i], model.predict(test_x[i])))
+    
+print(model.w)
+print(model.bias) #변수가 어떻게 바뀌었는지 보도록 하자.

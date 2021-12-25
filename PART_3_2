@@ -1,0 +1,65 @@
+import random
+
+class LinearRegression(object):
+    def __init__(self, eta = 0.01, iterations = 10):
+        self.lr = eta
+        self.iterations = iterations
+        self.w = 0.0
+        self.bias = 0.0
+    
+    def cost_function(self, X, Y, weight, bias):
+        n = len(X)
+        total_error = 0.0
+        for i in range(n):
+            total_error += (Y[i] - (weight*X[i] + bias))**2
+        return total_error / n #MSE 
+    
+    def update_weights(self, X, Y, weight, bias, learning_rate): #변경 부분
+        dw = 0
+        db = 0
+        n = len(X)
+        
+        indexes = list(range(0,n)) #0부터 n사이의 모든 수의 배열
+        random.shuffle(indexes) #중에 하나를 랜덤으로 섞는다.
+        batch_size = 4
+        
+        for k in range(batch_size):
+            i = indexes[k]
+            dw += -2 * X[i] * (Y[i] - (weight*X[i] + bias)) #직접 MSE를 w에 대해 편미분 한 것임
+            db += -2 * (Y[i] - (weight*X[i] + bias)) #이것은 b에 대해 편미분
+        
+        weight -= (dw / n) * learning_rate
+        bias -= (db / n) * learning_rate
+        
+        return weight, bias #변경 부분 끝
+    
+    def fit(self, X, Y):
+        cost_history = []
+        
+        for i in range(self.iterations):
+            self.w, self.bias = self.update_weights(X, Y, self.w, self.bias, self.lr) #한번에 두 개의 변수 수정 가능, lr이 learning rate
+            
+            cost = self.cost_function(X, Y, self.w, self.bias)
+            cost_history.append(cost) #변수의 변화 과정을 확인하기 위한 코드이다.
+            
+            if i % 10 == 0:
+                print("iter = {:d} weight = {:.2f} bias = {:.4f} cost = {:.2}".format(i, self.w, self.bias, cost))
+        return self.w, self.bias, cost_history
+            
+    def predict(self, x):
+        x = (x + 90) / 180 #뒤에 나올 정보의 값에 따라 정규화 해 준 것이다.
+        return self.w * x + self.bias #기본 선형식
+
+x = [1, 2, 3, 10, 20, 50, 100, -2, -10, -100, -5, -20]
+y = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+model = LinearRegression(0.01, 500) #반복을 500으로 수정      
+
+X = [(k + 100) / 200 for k in x]
+
+model.fit(X, y)
+
+test_x = [90, 80, 81, 82, 75, 40, 32, 15, 5, 1, -1, -15, -20, -22, -33, -45, -60, -90]
+
+for i in range(len(test_x)):
+    print('input {} => predict : {}'.format(test_x[i], model.predict(test_x[i])))

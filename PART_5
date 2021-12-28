@@ -1,0 +1,43 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
+from tensorflow.keras.utils import plot_model
+
+model = Sequential([
+    Dense(4, input_shape=(2,)), #4개의 뉴런이 들어있는 은닉층 정의, input 정보는 2개의 뉴런이 들어가 있음을 알려줌.
+    Activation('sigmoid'),
+    Dense(1), #1개의 뉴련이 들어있는 출력층을 정의.
+    Activation('sigmoid'), #활성화 함수는 모두 sigmoid를 선택.
+])
+
+plot_model(model, to_file='training_model.png', show_shapes=True) #모델 정의 완료, model을 시각화.
+
+model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss='mse', metrics=['accuracy']) #학습률 0.01, loss함수는 mse, 예측 평가 기준은 정확도로 지정.
+
+#훈련
+training_number = 500
+training_data = np.random.random((training_number, 2)) #random 함수를 사용해 (100, 2) 벡터 생성. 2개의 랜덤 수 100쌍.
+labels = np.array([(1 if data[0]<data[1] else 0) for data in training_data]) #조건 생성, 1 or 0값 가질 것.
+model.fit(training_data, labels, epochs=20, batch_size=32) # 반복 훈련 횟수는 20회, batch_size는 32 -> 32개씩 묶어서 학습시킴
+
+#테스트
+test_number = 100
+test_data = np.random.random((test_number, 2))
+expected = [(1 if data[0]<data[1] else 0) for data in test_data]
+error = 0
+for i in range(0, test_number):
+    data = test_data[i].reshape(1, 2) #데이터 재구성
+    pred = 0 if model.predict(data) < 0.5 else 1 #sigmoid이기 때문에 0에서 1사이 값 추출, 1 혹은 0으로 만들어 줘야 함.
+    
+    if (pred != expected[i]): #예측값과 정답값이 맞지 않으면 error 값 증가.
+        error += 1
+
+print("total errors : {}, accuracy : {}".format(error, 1.0-error/test_number))
+
+#한번 실행했을 때 error는 57개, 정확도는 43%이다.
+#좀 더 정확하게 예측했으면 좋겠다! 해결 방법은?
+#epoch 수정 <훈련 반복 늘리기> or training_number 수정 <학습 데이터 늘리기>
+#epoch 20 -> 200번 결과, error는 22개, 정확도 78%
+#training_number 100 -> 500 결과, error는 25개, 정확도 75%
+#효과가 있구만!

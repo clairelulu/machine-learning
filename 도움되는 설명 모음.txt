@@ -1,0 +1,184 @@
+1. Dense
+Dense는 완전연결층이다.
+파라미터가 많다. units - 뉴런의 개수, activation - 활성화 함수, use_bias - bias 사용 여부, default 값은 True
+활성화층이 네트워크의 첫 번째 층이면 input_shape 반드시 추가
+
+2. Activation 함수 목록
+
+a) Softmax -> sigmoid와는 다르게 단일 입력이 아닌 다중분류 처리 가능<모두 더해서 1이 되는 확률 함수>
+
+ex) import numpy as np
+     def softmax(inputs):
+         return np.exp(inputs) / float(sum(np.exp(inputs)))
+
+b) elu, selu, relu
+def elu(x, alpha = 1.0):
+    return x if x > 0 else alpha * (math.exp(x)-1)
+
+def selu(x):
+    scale = 1.0507
+    return scale * elu(x)
+selu는 elu에서 scale을 단순히 추가한 함수이다. scale은 보통 1.0507로 정의한다.
+
+def relu(x, alpha = 0.0, max_value = None, threshold = 0.0):
+    return max(x, 0)
+relu는 0보다 작으면 0을 반환하고, 0이상이면 값을 그대로 반환, 그러므로 0에서 꺾인 그래프가 그려진다
+이 점이 elu, selu와 다른 점
+
+c) softplus, softsign
+def softplus(x):
+    return math.log(math.exp(x) + 1) elu와 유사함
+
+def softsign(x):
+    return x / (abs(x) + 1) 
+tanh 함수를 대체하기 위하여 만든 함수이나 자주 사용되진 않는다.
+
+d) tanh
+def tanh(x):
+    return(math.exp(x) - math.exp(-x)) / (math.exp(x) + math.exp(-x))
+
+e) sigmoid, hard_sigmoid
+def sigmoid(x):
+    return 1 / (1 + math.exp(-x)
+
+def hard_sigmoid(x):
+    if x < -2.5:
+        return 0
+    if x > 2.5:
+        return 1
+    return 0.2 * x + 0.5
+hard_sigmoid는 sigmoid함수를 구간 선형 하도록 근사한 함수이다. sigmoid를 곡선없이 표현했다고 상상해보자.
+
+f) exponential
+def exponential(x):
+    return math.exp(x)
+그냥 일반적인 지수함수이다.
+
+g) linear
+def linear(x):
+    return x
+층에서 활성화 함수를 지정해 주지 않으면 선형 출력이 된다. 입력값이 출력값이 되는 것이다.
+
+3. 드롭아웃
+드롭아웃층과 완전연결층은 다른 개념이다.
+드롭아웃층은 훈련 시 입력된 모든 정보를 사용하지 않고, 일정한 비율에 따라 임의로 선택한다.
+이 방법은 overfitting을 방지할 수 있다.
+Dropout(rate, noise_shape = None, seed = None)
+rate는 [0, 1] 구간에 있는 실수이며, 선택하지 않을 입력의 비율을 결정
+noise_shape는 매번 drop시킬 입력을 제어한다
+seed는 랜덤 시드이며 정수이다. 별로 안 중요한 것 같다..
+
+4. flatten
+이전 입력을 일차원 형태로 전환해 줍니다. 특히 CNN 이미지 처리할 때 마지막 단계에서 전환한다고 수업해서 배웠다.
+input이 3, 32, 64라면 output은 6144가 나오는 것이다!
+
+5. input
+입력층으로 여러 인자가 있다
+shape는 shape=(32,)꼴로 쓰이며, 입력이 32차원 백터의 배치라는 의미이다.
+batch_shape는 batch_shape=(10, 32)꼴로 쓰이며, 입력이 10개의 32차원 벡터로 이루어진 배치라는 의미이다.
+name은 string 타입 층의 문자열 이름
+sparse는 자료들 중 다른 자료 원소에 비해 매우 작은 수 (0이나 1 등등) 의 성질을 의미
+tensor를 설정하면 input층은 해당 텐서의 래퍼로 사용되며, 새로운 placeholder를 만들지 않는다.
+
+6. reshape
+출력을 특정 형태로 변환한다.
+인자는 target(출력 이름)_shape -> tp.keras.layers.Reshape((3, 4), input_shape=(12,)))
+이 코드의 결과는 12개의 1차원 배열이 3X4형태의 배열로 변환되는 것이다.
+
+7. Permute
+입력 데이터 벡터의 순서를 변환
+x = np.array([[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]])
+model = Sequential()
+model.add(Permute([2, 1], input_shape=(2, 6)))
+y = model.predict(x)
+print(y)
+
+결과는 두 묶음의 6개의 원소 벡터에서 여섯 묶음의 2개의 원소 벡터로 변화한다. ([1, 7], [2, 8], ...)
+Permute([2, 3, 1], input_shape=(4, 3, 2))
+
+8. RepeatVector
+입력을 n회 반복한다.
+RepeatVector(3, input_shape==(4,)))
+print(~)
+원소 4개의 1차원 원소의 프린트를 3번 반복한다.
+
+9. Lambda
+람다층은 하나의 표현식을 인자로 전달하고 그 층의 기능을 정의함
+Lambda(function, output_shape=None, mask=None, arguments=None)
+function : 텐서 또는 리스트를 입력받는다
+output_shape : theano를 사용하는 경우에만 유효
+mask : embedding을 masking하는 tensor
+arguments : 함수에 전달하는 키워드 인자
+
+10. ActivityRegularization
+ActivityRegularization(l1 = 0.0, l2 = 0.0)꼴로 쓰인다.
+l1은 L1 정규화 인수이자 양의 실수이다.
+l2 역시 L2의 정규화 인수이자 양의 실수이다. 출력에 L1 혹은 L2 정규화 파라미터를 더하는 것이다.
+
+11. Masking
+Masking(mask_value = 0.0)형태로 쓴다.
+무슨 역할을 하냐..
+input이 1 2 3 / 1 1 1 / 7 8 9 / 10 11 12 이고
+Masking(1, input_shape=(4,3))이라고 쓰면
+결과값은 1 2 3 / 0 0 0 / 7 8 9 / 10 11 12이다. 즉 타임스텝의 모든 피처가 1일때 해당 입력을 건너뛴다.
+
+12. SpatialDropout
+SpatialDropout1D/2D/3D...로 쓰인다.
+1D는 dropout 함수와 동일하며, 2D, 3D...은 그 차원의 피처 맵 전체를 드롭시킨다.
+
+13. ETC
+a) 합성곱층(CNN에서 배운 내용!)
+Conv1D/2D..
+
+b) 풀링층(역시 배운 내용!)
+MaxPooling1D/2D... 
+AveragePooling1D/2D... 이거 둘 다 교수님이 언급하신 내용!
+이밖에 GlobalMaxPooling, Average 등등 있다..
+
+c) 지역적 연결층
+합성곱층과 매우 유사하나 차이점은 가중치를 공유하지 않는다는 점
+LocallyConnected1D/2D..
+
+d) 순환층(RNN임 역시 배운 내용!)
+RNN, SimpleRNN, GRU, LSTM 등등이 있다. 우리 커리큘럼에서는 제외했다.
+
+e) 임베딩층
+f) 결합층
+g) 정규화층 -  배치 훈련 데이터의 활성화 함수 출력에 관여하여 평균값이 0이고 표준편차가 1이 되도록 데이터를 조정한다.
+	      이 효과는 수업시간에 배웠다.
+h)노이즈층 - 노이즈(잡데이터)를 추가한다. 이 층은 훈련 과정에서 사용한다. 얼마나 유혹을 뿌리치고 정확한 값을 내는지..
+
+14. 자체 정의층
+이제는 내가 내맘대로 층을 만들고 싶다. (앞으로 그래야 할 것이다.)
+class로 선언한다!
+
+class MyLayer(Layer):
+    def __init__(self, output_dim, *kwargs): #__init__는 클래스를 초기화하고 출력을 정의한다.
+    ~~~
+    def build(self, input_shape): #가중치를 정의한다.
+    ~~~
+    def call(self, x, mask=None): #순전파 계산의 구현
+    ~~~
+    def get_output_shape_for(self, input_shape): #선택작업, 자동으로 입력 벡터 형태를 유추할 수 있도록 도움
+    ~~~
+
+15. Loss
+Loss는 비용함수(Cost function)와 같은 말
+model.complie(loss='MSE', optimizer='SGD')와 같이 쓴다.
+L1 손실과 L2 손실이 있다. L1 손실은 오차합의 절댓값을 계산하고, L2 손실은 오차의 제곱을 계산한다.
+MSE는 L2손실함수이며 자주 사용하나 정확성이 뛰어나진 않다.
+이 밖에도 매우 다양한 손실함수가 있다.. MAE, hinge, logcosh, binary_crossentropy(수업!)등..
+
+optimizer는 최적화 함수이며, 확률적 경사 하강법(SGD)이 바로 그것이다.
+SGD말고도 다른 여러 함수가 있다.. Adam, Adagrad, RMSprop등..
+
+16. Dataset
+keras에서 연구나 학습 목적으로 제공하는 데이터이며, import로 불러와 사용할 수 있다.
+이미지 분류 CIFAR10, CIFAR100
+영화 리뷰 데이터 IMDB Movie Reviews
+로이터 뉴스 제목 분류 데이터 Reuters Newswire Topics
+손글씨 인식 데이터 MNIST, Fashion MNIST
+보스턴 지구 집값 Boston Housing Price
+
+
+

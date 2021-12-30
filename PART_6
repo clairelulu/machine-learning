@@ -1,0 +1,27 @@
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, Dense, Activation, concatenate
+
+from tensorflow.keras.utils import plot_model
+
+model1 = Sequential()  # model1은 sequential 방식으로 구현하였다.
+model1.add(Dense(units=32, input_shape=(32,), activation='sigmoid'))
+plot_model(model1, to_file='m1.png', show_shapes=True)
+
+a = Input(shape=(32,))
+b = Dense(1, activation='sigmoid')(a)
+model2 = Model(inputs=a, outputs=b)  # model2는 input, output 방식으로 구현하였다.
+plot_model(model2, to_file='m2.png', show_shapes=True)  # 두 개의 model은 동일하다.
+
+# 한 네트워크의 결과가 다른 네트워크의 input이 되게 하는 새로운 네트워크
+
+input1 = Input(shape=(2,))  # 처음 2개
+h1 = Dense(3, activation='sigmoid')(input1)  # 3층의 은닉층
+output1 = Dense(1, activation='sigmoid')(h1)  # 출력은 1개의 원소
+
+input2 = Input(shape=(3,))  # 두번째 input 3개
+# concatenate는 결합하는 기능, 출력층 1개 + input 3개를 합쳐서 새로운 4개의 원소 new_input 생성
+new_input = concatenate([output1, input2])
+h2 = Dense(4, activation='sigmoid')(new_input)  # 4층의 은닉층
+output2 = Dense(2, activation='sigmoid')(h2)  # 출력은 2개의 원소
+model3 = Model(inputs=[input1, input2], outputs=[output1, output2])  # 결과를 동시에 출력
+plot_model(model3, to_file='m3.png', show_shapes=True)

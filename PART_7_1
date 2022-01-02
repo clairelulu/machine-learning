@@ -1,0 +1,28 @@
+import numpy as np
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
+
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y = np.array([[0], [1], [1], [0]]) #입력은 두 개고 출력은 한 개!, XOR연산 실험이다.
+
+#model = Sequential()
+#model.add(Dense(1, input_dim = 2))
+#model.add(Activation('sigmoid'))
+#model.compile(loss='MSE', optimizer='adam')
+#model.fit(X, y, batch_size = 1, epochs = 10000)
+#print(model.predict(X))
+#이렇게 명령하면 결과값은 모두 0.5와 비슷하게 나온다.
+#아무런 효과가 없다. XOR문제는 선형 분리 가능한 문제가 아니다. 이는 퍼셉트론 네트워크가 극복할 수 없는 문제이다.
+#은닉층을 추가하면 될까?
+
+model = Sequential()
+model.add(Dense(4, input_dim = 2))
+model.add(Activation('sigmoid'))
+model.add(Dense(1))
+model.add(Activation('sigmoid'))
+model.compile(loss='MSE', optimizer='adam')
+model.fit(X, y, batch_size = 1, epochs = 10000)
+
+print(model.predict(X)) # 이제 직접출력인 퍼셉트론이 아닌, 4개의 뉴런을 가진 은닉층을 가진 모델이 되었다.
+
+#결과는 [[0.00864711], [0.9886336 ], [0.98626614], [0.01805863]] 성공적이다!

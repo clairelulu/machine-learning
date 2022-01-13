@@ -1,0 +1,114 @@
+from collections import defaultdict, namedtuple
+from math import log2
+from sklearn import tree
+import pydot
+import numpy as np
+
+def split_dataset(dataset, classes, feat_idx):
+    ''' 어떤 특징 및 특정값을 기반으로 데이터셋 분할
+    :param dataset : 분할할 데이터셋
+    :param classes : 데이터셋에 대응하는 클래스, 데이터셋 길이와 동일
+    :param feat_idx : 특성 벡터 중에 특성 인덱스
+    :param splited_dict : 분할 후 데이터의 딕셔너리 값
+    '''
+    
+    splited_dict = {}
+    for data_vect, cls in zip(dataset, classes):
+        feat_val = data_vect[feat_idx]
+        sub_dataset, sub_classes = splited_dict.setdefault(feat_val, [[], []])
+        sub_dataset.append(data_vect[: feat_idx] + data_vect[feat_idx + 1:])
+        sub_classes.append(cls)
+        return splited_dict
+
+def get_majority(classes):
+    '''비중이 가장 높은 클래스를 반환
+    '''
+    cls_num = defaultdict(lambda : 0)
+    for cls in classes:
+        cls_num[cls] += 1
+        return max(cls_num, key=cls_num.get)
+
+def get_shanno_entropy(values):
+    '''섀넌 엔트로피 계산
+    '''
+    uniq_vals = set(values)
+    val_nums = {key : values.count(key) for key in uniq_vals}
+    probs = [v/len(values) for k, v in val_nums.items()]
+    entropy = sum([-prob*log2(prob) for prob in probs])
+    return entropy
+
+def choose_best_split_feature(dataset, classes):
+    '''정보 이득을 기반으로 데이터의 최적 특징 분할
+    :param dataset : 데이터셋
+    :param classes : 클래스(레이블)
+    :return : 정보 이득이 가장 큰 인덱스 반환
+    '''
+    base_entropy = get_shanno_entropy(classes)
+    feat_num = len(dataset[0])
+    entropy_gains = []
+    for i in range(feat_num):
+        splited_dict = split_dataset(dataset, classes, i)
+        new_entropy = sum([
+            len(sub_classes) / len(classes) * get_shanno_entropy(sub_classes)
+            for _, (_, sub_classes) in splited_dict.item()
+            ])
+        entropy_gains.append(base_entropy - new_entropy)
+        return entropy_gains.index(max(entropy_gains))
+
+def create_tree(dataset, classes, feat_names):
+    '''현재 데이터셋에 기반해 의사결정 트리를 재귀적으로 만듦
+    :paran dataset : 데이터셋
+    :param feat_names : 특성
+    :param classes : 클래스
+    :param tree : 딕셔너리 형식으로 트리를 반환
+    '''
+    #만약 데이터에 한 가지 클래스만 존재한다면 멈춤
+    if len(set(classes)) == 1:
+        return classes[0]
+    #모든 특성을 탐색한 후 가장 많은 클래스를 반환
+    if len(feat_names) == 0:
+        return get_majority(classes)
+    #새로운 서브트리 생성
+    tree = {}
+    best_feat_idx = choose_best_split_feature(dataset, classes)
+    feature = feat_names[best_feat_idx]
+    tree[feature] = {}
+    #서브 트리 생성에 필요한 서브 데이터셋 생성
+    sub_feat_names = feat_names[:]
+    sub_feat_names.pop(best_feat_idx)
+    splited_dict = split_dataset(dataset, classes, best_feat_idx)
+    for feat_val, (sub_dataset, sub_classes) in splited_dict.items():
+        tree[feature][feat_val] = create_tree(sub_dataset, sub_classes, sub_feat_names)
+        tree = tree
+        feat_names = feat_names
+        return tree
+
+def build_decisiontree_using_sklearn(X, Y):
+    clf = tree.DecisionTreeClassifier()
+    clf = clf.fit(X, Y)
+    n_nodes = clf.tree_.node_count
+    children_left = clf.tree_.children_left
+    children_right = clf.tree_.childred_right
+    feature = clf.tree_.feature
+    threshold = clf.tree_.threshold
+    dot_data = tree.export_graphviz(clf, out_file=None)
+    graph = pydot.grapf_from_dot_data(dot_data)
+    print(n_nodes)
+    print(children_left)
+    print(children_right)
+    print(feature)
+    print(threshold)
+    graph[0].write_dot('iris_simple.dot')
+    graph[0].write_png('iris_simple.dot')
+    return clf
+
+if __name__ == '__main__':
+    lense_labels = ['age', 'prescript', 'astigmatic', 'tearRate']
+    X = []
+    Y = []
+    with open('파일 경로', 'r', encoding = 'utf-8-sig') as f:
+        for line in f:
+            comps = line.strip().split(', ')
+            X.append(comps[: -1])
+            Y.append(comps[-1])
+    dt_model = build_decisiontree_using_sklearn(X, Y)

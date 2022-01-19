@@ -1,0 +1,32 @@
+import numpy as np
+import pandas as pd
+from sklearn import preprocessing
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.pipeline import Pipeline
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.patches as mpatches
+
+if __name__ == "__main__":
+    #데이터 경로 지정
+    path = 'iris.data'
+    data = pd.read_csv(path, header=None) #data는 iris를 읽어옴
+    data[4] = pd.Categorical(data[4]).codes
+    x, y = np.split(data.values, (4,), axis=1)
+    
+    #두 개의 특성만 사용
+    x = x[:, :2]
+    lr = Pipeline([('sc', StandardScaler()),
+                   ('poly', PolynomialFeatures(degree=3)),
+                   ('clf', LogisticRegression())])
+    lr.fit(x, y.ravel())
+    y_hat = lr.predict(x)
+    y_hat_prob = lr.predict_proba(x)
+    np.set_printoptions(suppress=True)
+    print('y_hat = \n', y_hat)
+    print('y_hat_prob = \n', y_hat_prob)
+    print('정확도 : %.2f%%' % (100*np.mean(y_hat == y.ravel())))
+    
+plt.plot(y_hat_prob)
+plt.show
